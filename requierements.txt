@@ -1,0 +1,4 @@
+-e git://github.com/ethereum/py-evm.git@master#egg=py-evm
+
+# for py-evm
+trinity
