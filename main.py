@@ -2,9 +2,8 @@
 
 import sys
 
-
 # Append path of py-evm repo for imports
-from datatypes.taintedbytes import tbytes, Comparisons
+from datatypes.taintedbytes import tbytes
 from eth.db.backends.memory import MemoryDB
 from eth.utils.hexadecimal import decode_hex
 from eth.vm.computation import BaseComputation
@@ -15,7 +14,7 @@ from eth_utils import (
     to_canonical_address
 )
 from eth import constants, Chain
-from eth.vm.forks.spurious_dragon import SpuriousDragonVM
+from eth.vm.forks.byzantium import ByzantiumVM
 
 sys.path.append('./src/py-evm/')
 sys.path.append('./src/py-evm/tests/')
@@ -23,6 +22,7 @@ sys.path.append('./src/py-evm/tests/')
 
 ADDRESS = bytes.fromhex("123456789A123456789A123456789A123456789A")
 GAS_PRICE = 1
+VERBOSE = False
 
 
 def base_db() -> MemoryDB:
@@ -87,7 +87,7 @@ class ChainHelper(object):
         klass = Chain.configure(
             __name__='TestChain',
             vm_configuration=(
-                (constants.GENESIS_BLOCK_NUMBER, SpuriousDragonVM),
+                (constants.GENESIS_BLOCK_NUMBER, ByzantiumVM),
             ),
             network_id=1337,
         )
@@ -117,13 +117,13 @@ class ChainHelper(object):
             'import_block': self.import_block_without_validation,
             'validate_block': lambda self, block: None,
         }
-        from eth.vm.forks import SpuriousDragonVM
-        SpuriousDragonVMForTesting = SpuriousDragonVM.configure(validate_seal=lambda block: None)
+
+        byzantiumVMForTesting = ByzantiumVM.configure(validate_seal=lambda block: None)
         chain_class = request.param
         klass = chain_class.configure(
             __name__='TestChainWithoutBlockValidation',
             vm_configuration=(
-                (constants.GENESIS_BLOCK_NUMBER, SpuriousDragonVMForTesting),
+                (constants.GENESIS_BLOCK_NUMBER, byzantiumVMForTesting),
             ),
             **overrides,
         )
@@ -153,8 +153,6 @@ class ChainHelper(object):
 class Simulator(object):
 
     def __init__(self):
-        #from tests.conftest import chain_without_block_validation
-        #self.chain = chain_without_block_validation(base_db(), funded_address(), funded_address_initial_balance())
         self.chain = ChainHelper().chain_with_block_validation(base_db(),
                                                                funded_address(),
                                                                funded_address_initial_balance())
@@ -176,31 +174,31 @@ class Simulator(object):
 
 
 def main(inputCode) -> None:
+
     print("Code: " + inputCode)
 
+    # create simulator for VM
     sim = Simulator()
+    # convert cli string input to tbytes input
     inputAsBytes = tbytes(decode_hex(inputCode))
 
-    print(" --------types-------------")
-    print(type(inputCode))
-    print(type(decode_hex(inputCode)))
-    print(type(tbytes(decode_hex(inputCode))))
-    print(type(inputAsBytes))
-    print(" --------types-------------")
-
-
+    if VERBOSE:
+        print(" --------types-------------")
+        print(type(inputCode))
+        print(type(decode_hex(inputCode)))
+        print(type(tbytes(decode_hex(inputCode))))
+        print(type(inputAsBytes))
+        print(" --------types-------------")
 
     # execute raw bytecode
     computation = sim.executeCode(1000000000000, b'', inputAsBytes)
-    #computation = sim.executeCode(1000, b'', inputCode)
 
-    print("Gas used: " + str(computation.get_gas_used()))
-    print("Remaining gas: " + str(computation.get_gas_remaining()))
+    if VERBOSE:
+        print("Gas used: " + str(computation.get_gas_used()))
+        print("Remaining gas: " + str(computation.get_gas_remaining()))
 
-    print(computation.get_log_entries())
-    print("Stack: " + str(computation._stack.values))
-
-    print(Comparisons)
+        print(computation.get_log_entries())
+        print("Stack: " + str(computation._stack.values))
 
 
 if __name__ == '__main__':
