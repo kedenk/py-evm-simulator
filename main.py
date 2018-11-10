@@ -5,6 +5,7 @@ import sys
 # Append path of py-evm repo for imports
 from datatypes.taintedbytes import tbytes
 from eth.db.backends.memory import MemoryDB
+from eth.exceptions import VMError
 from eth.utils.hexadecimal import decode_hex
 from eth.vm.computation import BaseComputation
 from eth_keys import KeyAPI
@@ -150,6 +151,13 @@ class ChainHelper(object):
         return chain
 
 
+class VMExecutionError(Exception):
+
+    def __init__(self, msg: str, vm_error: VMError):
+        self.msg = msg
+        self.vm_error: vm_error
+
+
 class Simulator(object):
 
     def __init__(self):
@@ -192,6 +200,12 @@ def main(inputCode) -> None:
 
     # execute raw bytecode
     computation = sim.executeCode(1000000000000, b'', inputAsBytes)
+
+    # check, if error during execution occured
+    if computation.is_error:
+        origin = computation._error
+        exc = VMExecutionError(str(origin), origin)
+        raise exc
 
     if VERBOSE:
         print("Gas used: " + str(computation.get_gas_used()))
