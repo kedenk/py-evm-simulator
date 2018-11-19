@@ -1,0 +1,8 @@
+[run]
+cover_pylib = False
+
+include =
+    src/py-evm/*
+
+omit =
+    /home/user/.local/lib/python3.6/site-packages/*

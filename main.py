@@ -183,20 +183,13 @@ class Simulator(object):
 
 def main(inputCode) -> None:
 
-    print("Code: " + inputCode)
-
     # create simulator for VM
     sim = Simulator()
     # convert cli string input to tbytes input
     inputAsBytes = tbytes(decode_hex(inputCode))
 
     if VERBOSE:
-        print(" --------types-------------")
-        print(type(inputCode))
-        print(type(decode_hex(inputCode)))
-        print(type(tbytes(decode_hex(inputCode))))
-        print(type(inputAsBytes))
-        print(" --------types-------------")
+        print("Code: " + inputCode)
 
     # execute raw bytecode
     computation = sim.executeCode(1000000000000, b'', inputAsBytes)
